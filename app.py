@@ -22,6 +22,14 @@ ZALOPAY_CONFIG = {
     "status_endpoint": "https://sandbox.zalopay.com.vn/v001/tpe/getstatusbyapptransid"
 }
 
+
+SQL_SERVER_DRIVER = os.environ.get('DB_DRIVER', 'ODBC Driver 17 for SQL Server')
+SQL_SERVER_HOST = os.environ.get('DB_HOST', 'TRUNG')
+SQL_SERVER_DATABASE = os.environ.get('DB_NAME', 'JLearn')
+SQL_SERVER_USER = os.environ.get('DB_USER', 'ca')
+SQL_SERVER_PASSWORD = os.environ.get('DB_PASSWORD', '01234nung')
+SQL_SERVER_TRUST_SERVER_CERT = os.environ.get('DB_TRUST_SERVER_CERT', 'Yes')
+
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
 
@@ -31,7 +39,7 @@ model = genai.GenerativeModel('gemini-2.0-flash')
 # Temporary store for pending orders. In production, use a persistent store like Redis or a database.
 pending_orders = {}
 
-SQL_SERVER_CONNECTION_STRING = r"Driver={ODBC Driver 17 for SQL Server};Server=TRUNG;Database=JLearn;UID=ca;PWD=01234nung;TrustServerCertificate=Yes;"
+SQL_SERVER_CONNECTION_STRING = f"Driver={{{SQL_SERVER_DRIVER}}};Server={SQL_SERVER_HOST};Database={SQL_SERVER_DATABASE};UID={SQL_SERVER_USER};PWD={SQL_SERVER_PASSWORD};TrustServerCertificate={SQL_SERVER_TRUST_SERVER_CERT};"
 
 
 def get_db_connection():
