@@ -28,7 +28,7 @@ jobs:
           context: .
           push: true
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/jlearn_fe_app:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/jlearn_be_python_app:latest
 
   deploy:
     needs: build-and-push
