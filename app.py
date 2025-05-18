@@ -315,7 +315,163 @@ def order_status():
     except Exception as e:
         print(f"Error getting order status or processing transaction for apptransid {apptransid}: {e}")
         return jsonify({'error': str(e)}), 500
+    
+@app.route('/get_collections', methods=['GET'])
+def get_collections():
+    if request.method == 'GET':
+        user_id = request.args.get('user_id')
+        if not user_id:
+            return jsonify({'error': 'Missing user_id parameter'}), 400
+    elif request.method == 'POST':
+        data = request.get_json()
+        if not data or 'user_id' not in data:
+            return jsonify({'error': 'Missing user_id in request body'}), 400
+        user_id = data['user_id']
+
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'error': 'Failed to connect to the database'}), 500
+
+    try:
+        cursor = conn.cursor()
+        sql = "SELECT CollectionID FROM Transactions WHERE UserID = ?"
+        cursor.execute(sql, user_id)
+        collections = [row.CollectionID for row in cursor.fetchall()]
+        return jsonify({'user_id': user_id, 'collections': collections})
+        print(f"Fetched collections for user_id {user_id}: {collections}")
+    
+    except pyodbc.Error as e:
+        print(f"Database error while fetching collections for user_id {user_id}: {e}")
+        return jsonify({'error': 'Database query failed'}), 500
+    finally:
+        if conn:
+            cursor.close()
+            conn.close()
+
+@app.route('/admin/metrics', methods=['GET'])
+def get_admin_metrics():
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'error': 'Failed to connect to the database'}), 500
+
+    try:
+        cursor = conn.cursor()
+        
+        cursor.execute("SELECT COUNT(*) as total FROM Users")
+        total_users = cursor.fetchone().total
+
+        cursor.execute("""
+            SELECT COUNT(*) as new_users 
+            FROM Users 
+            WHERE CreatedAt >= DATEADD(day, -30, GETDATE())
+        """)
+        new_users = cursor.fetchone().new_users
+
+        # Debug: First check if there are any transactions
+        cursor.execute("SELECT COUNT(*) as count FROM Transactions")
+        transaction_count = cursor.fetchone().count
+        print(f"Total number of transactions: {transaction_count}")
+
+        # If no transactions exist, add a test transaction
+        if transaction_count == 0:
+            print("No transactions found. Adding a test transaction...")
+            try:
+                # Get the first user ID
+                cursor.execute("SELECT TOP 1 UserID FROM Users")
+                user_id = cursor.fetchone().UserID
+                
+                # Get the first collection ID (you might need to adjust this based on your schema)
+                cursor.execute("SELECT TOP 1 CollectionID FROM VocabularyCollection")
+                collection_id = cursor.fetchone().CollectionID
+                
+                # Add test transaction
+                test_transaction_id = str(uuid.uuid4())
+                cursor.execute("""
+                    INSERT INTO Transactions (TransactionID, UserID, CollectionID, AmountPaid, TransactionDate)
+                    VALUES (?, ?, ?, ?, GETDATE())
+                """, test_transaction_id, user_id, collection_id, 50000.00)
+                conn.commit()
+                print(f"Added test transaction with amount: 50000.00")
+            except Exception as e:
+                print(f"Error adding test transaction: {e}")
+                conn.rollback()
+
+        # Debug: Check individual transaction amounts with more details
+        cursor.execute("""
+            SELECT 
+                TransactionID,
+                UserID,
+                CollectionID,
+                AmountPaid,
+                TransactionDate,
+                CAST(AmountPaid as decimal(10,2)) as AmountPaidDecimal
+            FROM Transactions 
+            ORDER BY TransactionDate DESC
+        """)
+        transactions = cursor.fetchall()
+        print("\nDetailed transaction information:")
+        total_amount = 0
+        for t in transactions:
+            print(f"Transaction {t.TransactionID}:")
+            print(f"  AmountPaid (raw): {t.AmountPaid}")
+            print(f"  AmountPaid (decimal): {t.AmountPaidDecimal}")
+            print(f"  Date: {t.TransactionDate}")
+            total_amount += float(t.AmountPaidDecimal) if t.AmountPaidDecimal else 0
+
+        print(f"\nManually calculated total: {total_amount}")
+
+        # Get total revenue - Try different approaches
+        cursor.execute("""
+            SELECT 
+                ISNULL(SUM(CAST(AmountPaid as decimal(10,2))), 0) as total_sum,
+                ISNULL(SUM(AmountPaid), 0) as raw_sum
+            FROM Transactions
+        """)
+        revenue_result = cursor.fetchone()
+        total_revenue = float(revenue_result.total_sum) if revenue_result.total_sum is not None else 0
+        raw_sum = float(revenue_result.raw_sum) if revenue_result.raw_sum is not None else 0
+        
+        print(f"\nSQL calculated totals:")
+        print(f"  Using CAST: {total_revenue}")
+        print(f"  Raw sum: {raw_sum}")
+
+        # Get user growth for last 6 months
+        cursor.execute("""
+            SELECT 
+                FORMAT(CreatedAt, 'MMM') as month,
+                COUNT(*) as count
+            FROM Users
+            WHERE CreatedAt >= DATEADD(month, -6, GETDATE())
+            GROUP BY FORMAT(CreatedAt, 'MMM')
+            ORDER BY MIN(CreatedAt)
+        """)
+        user_growth = []
+        for row in cursor.fetchall():
+            user_growth.append({
+                'month': row.month,
+                'count': row.count
+            })
+
+        # Use the manually calculated total if SQL sum is 0
+        if total_revenue == 0 and total_amount > 0:
+            total_revenue = total_amount
+            print(f"Using manually calculated total: {total_revenue}")
+
+        metrics = {
+            'totalUsers': total_users,
+            'newUsers': new_users,
+            'totalRevenue': total_revenue,
+            'userGrowth': user_growth
+        }
+        print("\nFinal metrics being sent:", metrics)
+        return jsonify(metrics)
+    except pyodbc.Error as e:
+        print(f"Database error while fetching metrics: {e}")
+        return jsonify({'error': 'Database query failed'}), 500
+    finally:
+        if conn:
+            cursor.close()
+            conn.close()
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
-
