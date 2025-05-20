@@ -241,7 +241,7 @@ def get_zalopay_order_status(apptransid):
     result = json.loads(response.read())
     return result
 
-@app.route('/create_order', methods=['POST'])
+@app.route('/api/ml/create_order', methods=['POST'])
 def create_order():
     req = request.get_json() or {}
     amount = req.get('amount', 50000)
@@ -274,7 +274,7 @@ def create_order():
         print(f"Error creating ZaloPay order: {e}")
         return jsonify({'error': str(e)}), 500
 
-@app.route('/order_status', methods=['GET'])
+@app.route('/api/ml/order_status', methods=['GET'])
 def order_status():
     apptransid = request.args.get('apptransid')
     if not apptransid:
@@ -316,7 +316,7 @@ def order_status():
         print(f"Error getting order status or processing transaction for apptransid {apptransid}: {e}")
         return jsonify({'error': str(e)}), 500
     
-@app.route('/get_collections', methods=['GET'])
+@app.route('/api/ml/get_collections', methods=['GET'])
 def get_collections():
     if request.method == 'GET':
         user_id = request.args.get('user_id')
@@ -348,7 +348,7 @@ def get_collections():
             cursor.close()
             conn.close()
 
-@app.route('/admin/metrics', methods=['GET'])
+@app.route('/api/ml/admin/metrics', methods=['GET'])
 def get_admin_metrics():
     conn = get_db_connection()
     if not conn:
