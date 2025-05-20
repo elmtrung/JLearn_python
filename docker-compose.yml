@@ -3,8 +3,6 @@ version: '3.8'
 services:
   backend_python:
     image: quangvinh1601/jlearn_be_python_app:latest
-    ports:
-      - "5000:5000"  # Thay đổi cổng nội bộ từ 80 thành 5000 để phù hợp với Flask
     restart: unless-stopped
     networks:
       - my_network
