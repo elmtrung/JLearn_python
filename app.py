@@ -128,7 +128,7 @@ def analyze_japanese_text(text, additional_text):
     response = model.generate_content(prompt)
     return response.text
 
-@app.route('/transcribe', methods=['POST'])
+@app.route('/api/ml/transcribe', methods=['POST'])
 def transcribe_audio():
     if 'audio' not in request.files:
         return jsonify({'error': 'No audio file provided'}), 400
