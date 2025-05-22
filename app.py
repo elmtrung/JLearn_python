@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify
-from flask_cors import CORS  # Import CORS
+from flask_cors import CORS
 from asgiref.sync import async_to_sync  # Correct the import
 import speech_recognition as sr
 from pydub import AudioSegment
@@ -11,7 +11,8 @@ from googletrans import Translator  # Add this import
 import uuid, json, hmac, hashlib, urllib.request, urllib.parse
 from datetime import datetime
 from time import time
-import pyodbc  # For SQL Server connection
+import pyodbc  
+import traceback  
 
 # ZaloPay config
 ZALOPAY_CONFIG = {
@@ -31,7 +32,16 @@ SQL_SERVER_PASSWORD = os.environ.get('DB_PASSWORD', '01234nung')
 SQL_SERVER_TRUST_SERVER_CERT = os.environ.get('DB_TRUST_SERVER_CERT', 'Yes')
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for all routes
+CORS(app)
+
+# CORS(app, resources={
+#     r"/*": {
+#         "origins": ["http://localhost:3000"],
+#         "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+#         "allow_headers": ["Content-Type", "Authorization"],
+#         "supports_credentials": True
+#     }
+# })
 
 genai.configure(api_key="AIzaSyDdIVT2V5A4L79oiyzsaRKPbsBJTEErlq4")
 model = genai.GenerativeModel('gemini-2.0-flash')
@@ -123,58 +133,95 @@ def analyze_japanese_text(text, additional_text):
     Đoạn văn bản:
     {text}
 
-    Phân tích và đề xuất sửa lỗi (nếu có):"""
+    Phân tích và đề xuất sửa lỗi (nếu có):
+    1. Phân tích lỗi dùng từ
+    2. Phân tích ngữ pháp
+    3. Đề xuất sửa lỗi và giải thích
+    4. Kết luận
+
+    Hãy trả về kết quả theo định dạng sau:
+    [TRANSCRIPTION]
+    {text}
+
+    [PHÂN TÍCH LỖI DÙNG TỪ]
+    - Liệt kê các lỗi dùng từ và giải thích
+
+    [PHÂN TÍCH NGỮ PHÁP]
+    - Phân tích cấu trúc ngữ pháp của câu
+
+    [ĐỀ XUẤT SỬA LỖI]
+    - Đưa ra các phiên bản sửa lỗi và giải thích
+
+    [KẾT LUẬN]
+    - Tóm tắt và đưa ra phiên bản chính xác nhất
+    """
 
     response = model.generate_content(prompt)
     return response.text
 
 @app.route('/api/ml/transcribe', methods=['POST'])
 def transcribe_audio():
+  
     if 'audio' not in request.files:
-        return jsonify({'error': 'No audio file provided'}), 400
+        print("No audio file part in request.files")
+        return jsonify({'error': 'No audio file provided. Make sure to use form-data with a file field named "audio".'}), 400
 
-    additional_text = request.form.get('additional_text', '').strip()  # Ensure proper decoding and strip whitespace
-    print(f"additional_text: {additional_text}")
     audio_file = request.files['audio']
+    if audio_file.filename == '':
+        print("Audio file field is present but filename is empty")
+        return jsonify({'error': 'Empty audio file provided (filename is empty).'}), 400
 
-    with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(audio_file.filename)[1]) as temp_audio_file:
-        audio_file.save(temp_audio_file.name)
-        audio_file_path = temp_audio_file.name
+    additional_text = request.form.get('additional_text', '').strip()
+    print(f"additional_text: {additional_text}")
 
-    print(f"File audio tạm thời đã lưu tại: {audio_file_path}")
-
-    temp_wav_path = None
     try:
-        temp_wav_path = _load_and_convert_audio(audio_file_path)
-        if not temp_wav_path:
-            return jsonify({'error': 'Failed to convert audio to WAV'}), 500
+        with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(audio_file.filename)[1]) as temp_audio_file:
+            audio_file.save(temp_audio_file.name)
+            audio_file_path = temp_audio_file.name
 
-        transcription = _transcribe_audio(temp_wav_path)
-        if not transcription:
-            return jsonify({'error': 'Failed to transcribe audio'}), 500
+        print(f"File audio tạm thời đã lưu tại: {audio_file_path}")
 
-        # Combine transcription and additional text for analysis
-        
-        analysis_result = analyze_japanese_text(transcription, additional_text)
-        print("analysis_result:", analysis_result)
-        print("transcription:", transcription)
-        return jsonify({
-            'transcription': transcription,
-            'additional_text': additional_text,  # Include additional_text in the response
-            'analysis_result': analysis_result
-        })
+        temp_wav_path = None
+        try:
+            temp_wav_path = _load_and_convert_audio(audio_file_path)
+            if not temp_wav_path:
+                return jsonify({'error': 'Failed to convert audio to WAV'}), 500
+
+            transcription = _transcribe_audio(temp_wav_path)
+            if not transcription:
+                return jsonify({'error': 'Failed to transcribe audio'}), 500
+
+            analysis_result = analyze_japanese_text(transcription, additional_text)
+            def remove_asterisks(text):
+                return text.replace('*', '') if text else text
+
+            cleaned_analysis_result = remove_asterisks(analysis_result)
+            print("analysis_result:", cleaned_analysis_result)
+            print("transcription:", transcription)
+            return jsonify({
+                'transcription': transcription,
+                'additional_text': additional_text,
+                'analysis_result': cleaned_analysis_result
+            })
+
+        except Exception as e:
+            print(f"Đã xảy ra lỗi: {e}")
+            traceback_str = traceback.format_exc()
+            print(traceback_str)
+            return jsonify({'error': str(e), 'traceback': traceback_str}), 500
+
+        finally:
+            if temp_wav_path and os.path.exists(temp_wav_path):
+                os.remove(temp_wav_path)
+            if os.path.exists(audio_file_path):
+                os.remove(audio_file_path)
+            print(f"Đã xóa file tạm: {temp_wav_path} và {audio_file_path}")
 
     except Exception as e:
-        print(f"Đã xảy ra lỗi: {e}")
-        return jsonify({'error': str(e)}), 500
-        
-    finally:
-        if temp_wav_path and os.path.exists(temp_wav_path):
-            os.remove(temp_wav_path)
-        if os.path.exists(audio_file_path):
-            os.remove(audio_file_path)
-        print(f"Đã xóa file tạm: {temp_wav_path} và {audio_file_path}")
-    
+        print(f"Error processing request: {e}")
+        traceback_str = traceback.format_exc()
+        print(traceback_str)
+        return jsonify({'error': str(e), 'traceback': traceback_str}), 500
 
 async def translate_japanese_to_vietnamese(text):
     translator = Translator()
@@ -357,105 +404,32 @@ def get_admin_metrics():
     try:
         cursor = conn.cursor()
         
-        cursor.execute("SELECT COUNT(*) as total FROM Users")
-        total_users = cursor.fetchone().total
-
-        cursor.execute("""
-            SELECT COUNT(*) as new_users 
-            FROM Users 
-            WHERE CreatedAt >= DATEADD(day, -30, GETDATE())
-        """)
-        new_users = cursor.fetchone().new_users
-
-        # Debug: First check if there are any transactions
-        cursor.execute("SELECT COUNT(*) as count FROM Transactions")
-        transaction_count = cursor.fetchone().count
-        print(f"Total number of transactions: {transaction_count}")
-
-        # If no transactions exist, add a test transaction
-        if transaction_count == 0:
-            print("No transactions found. Adding a test transaction...")
-            try:
-                # Get the first user ID
-                cursor.execute("SELECT TOP 1 UserID FROM Users")
-                user_id = cursor.fetchone().UserID
-                
-                # Get the first collection ID (you might need to adjust this based on your schema)
-                cursor.execute("SELECT TOP 1 CollectionID FROM VocabularyCollection")
-                collection_id = cursor.fetchone().CollectionID
-                
-                # Add test transaction
-                test_transaction_id = str(uuid.uuid4())
-                cursor.execute("""
-                    INSERT INTO Transactions (TransactionID, UserID, CollectionID, AmountPaid, TransactionDate)
-                    VALUES (?, ?, ?, ?, GETDATE())
-                """, test_transaction_id, user_id, collection_id, 50000.00)
-                conn.commit()
-                print(f"Added test transaction with amount: 50000.00")
-            except Exception as e:
-                print(f"Error adding test transaction: {e}")
-                conn.rollback()
-
-        # Debug: Check individual transaction amounts with more details
+        # Lấy tổng số user và số user mới trong 30 ngày gần nhất
         cursor.execute("""
             SELECT 
-                TransactionID,
-                UserID,
-                CollectionID,
-                AmountPaid,
-                TransactionDate,
-                CAST(AmountPaid as decimal(10,2)) as AmountPaidDecimal
-            FROM Transactions 
-            ORDER BY TransactionDate DESC
+                COUNT(*) as total_users,
+                SUM(CASE WHEN CreatedAt >= DATEADD(day, -30, GETDATE()) THEN 1 ELSE 0 END) as new_users
+            FROM Users
         """)
-        transactions = cursor.fetchall()
-        print("\nDetailed transaction information:")
-        total_amount = 0
-        for t in transactions:
-            print(f"Transaction {t.TransactionID}:")
-            print(f"  AmountPaid (raw): {t.AmountPaid}")
-            print(f"  AmountPaid (decimal): {t.AmountPaidDecimal}")
-            print(f"  Date: {t.TransactionDate}")
-            total_amount += float(t.AmountPaidDecimal) if t.AmountPaidDecimal else 0
+        user_row = cursor.fetchone()
+        total_users = user_row.total_users
+        new_users = user_row.new_users
 
-        print(f"\nManually calculated total: {total_amount}")
+        # Lấy tổng doanh thu
+        cursor.execute("SELECT ISNULL(SUM(CAST(AmountPaid as decimal(18,2))), 0) as total_revenue FROM Transactions")
+        total_revenue = float(cursor.fetchone().total_revenue)
 
-        # Get total revenue - Try different approaches
-        cursor.execute("""
-            SELECT 
-                ISNULL(SUM(CAST(AmountPaid as decimal(10,2))), 0) as total_sum,
-                ISNULL(SUM(AmountPaid), 0) as raw_sum
-            FROM Transactions
-        """)
-        revenue_result = cursor.fetchone()
-        total_revenue = float(revenue_result.total_sum) if revenue_result.total_sum is not None else 0
-        raw_sum = float(revenue_result.raw_sum) if revenue_result.raw_sum is not None else 0
-        
-        print(f"\nSQL calculated totals:")
-        print(f"  Using CAST: {total_revenue}")
-        print(f"  Raw sum: {raw_sum}")
-
-        # Get user growth for last 6 months
+        # Lấy tăng trưởng user 6 tháng gần nhất
         cursor.execute("""
             SELECT 
                 FORMAT(CreatedAt, 'MMM') as month,
                 COUNT(*) as count
             FROM Users
             WHERE CreatedAt >= DATEADD(month, -6, GETDATE())
-            GROUP BY FORMAT(CreatedAt, 'MMM')
-            ORDER BY MIN(CreatedAt)
+            GROUP BY FORMAT(CreatedAt, 'MMM'), DATEPART(month, CreatedAt)
+            ORDER BY DATEPART(month, MIN(CreatedAt))
         """)
-        user_growth = []
-        for row in cursor.fetchall():
-            user_growth.append({
-                'month': row.month,
-                'count': row.count
-            })
-
-        # Use the manually calculated total if SQL sum is 0
-        if total_revenue == 0 and total_amount > 0:
-            total_revenue = total_amount
-            print(f"Using manually calculated total: {total_revenue}")
+        user_growth = [{'month': row.month, 'count': row.count} for row in cursor.fetchall()]
 
         metrics = {
             'totalUsers': total_users,
@@ -463,7 +437,6 @@ def get_admin_metrics():
             'totalRevenue': total_revenue,
             'userGrowth': user_growth
         }
-        print("\nFinal metrics being sent:", metrics)
         return jsonify(metrics)
     except pyodbc.Error as e:
         print(f"Database error while fetching metrics: {e}")
