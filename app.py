@@ -25,23 +25,23 @@ ZALOPAY_CONFIG = {
 
 
 SQL_SERVER_DRIVER = os.environ.get('DB_DRIVER', 'ODBC Driver 17 for SQL Server')
-SQL_SERVER_HOST = os.environ.get('DB_HOST', 'TRUNG')
-SQL_SERVER_DATABASE = os.environ.get('DB_NAME', 'JLearn')
-SQL_SERVER_USER = os.environ.get('DB_USER', 'ca')
-SQL_SERVER_PASSWORD = os.environ.get('DB_PASSWORD', '01234nung')
+SQL_SERVER_HOST = os.environ.get('DB_HOST', '34.44.254.240,1433')
+SQL_SERVER_DATABASE = os.environ.get('DB_NAME', 'JLearnDb')
+SQL_SERVER_USER = os.environ.get('DB_USER', 'sa')
+SQL_SERVER_PASSWORD = os.environ.get('DB_PASSWORD', 'Quangvinh16#')
 SQL_SERVER_TRUST_SERVER_CERT = os.environ.get('DB_TRUST_SERVER_CERT', 'Yes')
 
 app = Flask(__name__)
-CORS(app)
+# CORS(app)
 
-# CORS(app, resources={
-#     r"/*": {
-#         "origins": ["http://localhost:3000"],
-#         "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-#         "allow_headers": ["Content-Type", "Authorization"],
-#         "supports_credentials": True
-#     }
-# })
+CORS(app, resources={
+    r"/*": {
+        "origins": ["http://localhost:3000"],
+        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        "allow_headers": ["Content-Type", "Authorization"],
+        "supports_credentials": True
+    }
+})
 
 genai.configure(api_key="AIzaSyDdIVT2V5A4L79oiyzsaRKPbsBJTEErlq4")
 model = genai.GenerativeModel('gemini-2.0-flash')
@@ -395,7 +395,7 @@ def get_collections():
             cursor.close()
             conn.close()
 
-@app.route('/api/ml/admin/metrics', methods=['GET'])
+@app.route('/admin/metrics', methods=['GET'])
 def get_admin_metrics():
     conn = get_db_connection()
     if not conn:
@@ -437,6 +437,7 @@ def get_admin_metrics():
             'totalRevenue': total_revenue,
             'userGrowth': user_growth
         }
+        print(f"Admin metrics: {metrics}")
         return jsonify(metrics)
     except pyodbc.Error as e:
         print(f"Database error while fetching metrics: {e}")
