@@ -25,22 +25,22 @@ COPY . .
 # Stage 2: Production image
 FROM python:3.11-slim
 
-# Set working directory
 WORKDIR /app
 
-# Install runtime dependencies
 RUN apt-get update && \
     apt-get install -y \
     unixodbc \
+    unixodbc-dev \
     ffmpeg \
     && ln -s /usr/lib/x86_64-linux-gnu/libodbc.so.2 /usr/lib/libodbc.so.2 \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy dependencies from build stage
 COPY --from=build /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=build /app /app
 
-# Expose port
+# Cài pyodbc nếu cần chắc chắn
+# RUN pip install pyodbc
+
 EXPOSE 5000
 
 ENV DB_DRIVER="ODBC Driver 17 for SQL Server" \
@@ -50,5 +50,4 @@ ENV DB_DRIVER="ODBC Driver 17 for SQL Server" \
     DB_PASSWORD="Quangvinh16#" \
     DB_TRUST_SERVER_CERT="Yes"
 
-# Run the application
 CMD ["python", "app.py"]
