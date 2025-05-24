@@ -42,6 +42,6 @@ jobs:
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd /home/nguyenhuuquangvinh/jlearn_be_python_app
+            cd /home/nguyenhuuquangvinh/app
             docker pull ${{ secrets.DOCKERHUB_USERNAME }}/jlearn_be_python_app:latest                
             docker compose up -d
