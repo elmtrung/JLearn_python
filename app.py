@@ -25,7 +25,7 @@ ZALOPAY_CONFIG = {
 
 
 SQL_SERVER_DRIVER = os.environ.get('DB_DRIVER', 'ODBC Driver 17 for SQL Server')
-SQL_SERVER_HOST = os.environ.get('DB_HOST', 'sqlserver')
+SQL_SERVER_HOST = os.environ.get('DB_HOST', '34.44.254.240,1433')
 SQL_SERVER_DATABASE = os.environ.get('DB_NAME', 'JLearnDb')
 SQL_SERVER_USER = os.environ.get('DB_USER', 'sa')
 SQL_SERVER_PASSWORD = os.environ.get('DB_PASSWORD', 'Quangvinh16#')
@@ -49,8 +49,8 @@ model = genai.GenerativeModel('gemini-2.0-flash')
 # Temporary store for pending orders. In production, use a persistent store like Redis or a database.
 pending_orders = {}
 
-SQL_SERVER_CONNECTION_STRING = f"Driver={{{SQL_SERVER_DRIVER}}};Server={SQL_SERVER_HOST};Database={SQL_SERVER_DATABASE};UID={SQL_SERVER_USER};PWD={SQL_SERVER_PASSWORD};TrustServerCertificate={SQL_SERVER_TRUST_SERVER_CERT};"
-
+# SQL_SERVER_CONNECTION_STRING = f"Driver={{{SQL_SERVER_DRIVER}}};Server={SQL_SERVER_HOST};Database={SQL_SERVER_DATABASE};UID={SQL_SERVER_USER};PWD={SQL_SERVER_PASSWORD};TrustServerCertificate={SQL_SERVER_TRUST_SERVER_CERT};"
+SQL_SERVER_CONNECTION_STRING = "Driver={ODBC Driver 17 for SQL Server};Server=34.44.254.240,1433;Database=JLearnDb;UID=sa;PWD=Quangvinh16#;TrustServerCertificate=Yes;"
 
 def get_db_connection():
     """Establishes a connection to the SQL Server database using the provided connection string."""
@@ -378,7 +378,6 @@ def get_collections():
 
     conn = get_db_connection()
     if not conn:
-        print(SQL_SERVER_CONNECTION_STRING)
         return jsonify({'error': 'Failed to connect to the database'}), 500
 
     try:
