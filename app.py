@@ -14,7 +14,6 @@ from time import time
 import pyodbc  
 import traceback  
 
-# ZaloPay config
 ZALOPAY_CONFIG = {
     "appid": 553,
     "key1": "9phuAOYhan4urywHTh0ndEXiV3pKHr5Q",
