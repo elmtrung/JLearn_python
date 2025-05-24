@@ -43,12 +43,12 @@ COPY --from=build /app /app
 # Expose port
 EXPOSE 5000
 
-# ENV DB_DRIVER="ODBC Driver 17 for SQL Server" \
-#     DB_HOST="34.44.254.240,1433" \
-#     DB_NAME="JLearnDb" \
-#     DB_USER="sa" \
-#     DB_PASSWORD="Quangvinh16#" \
-#     DB_TRUST_SERVER_CERT="Yes"
+ENV DB_DRIVER="ODBC Driver 17 for SQL Server" \
+    DB_HOST="sqlserver" \
+    DB_NAME="JLearnDb" \
+    DB_USER="sa" \
+    DB_PASSWORD="Quangvinh16#" \
+    DB_TRUST_SERVER_CERT="Yes"
 
 # Run the application
 CMD ["python", "app.py"]

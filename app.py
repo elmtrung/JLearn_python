@@ -25,10 +25,10 @@ ZALOPAY_CONFIG = {
 
 
 SQL_SERVER_DRIVER = os.environ.get('DB_DRIVER', 'ODBC Driver 17 for SQL Server')
-SQL_SERVER_HOST = os.environ.get('DB_HOST', '34.44.254.240,1433')
-SQL_SERVER_DATABASE = os.environ.get('DB_NAME', 'JLearnDb')
-SQL_SERVER_USER = os.environ.get('DB_USER', 'sa')
-SQL_SERVER_PASSWORD = os.environ.get('DB_PASSWORD', 'Quangvinh16#')
+SQL_SERVER_HOST = os.environ.get('DB_HOST', 'TRUNG')
+SQL_SERVER_DATABASE = os.environ.get('DB_NAME', 'JLearn')
+SQL_SERVER_USER = os.environ.get('DB_USER', 'ca')
+SQL_SERVER_PASSWORD = os.environ.get('DB_PASSWORD', '01234nung')
 SQL_SERVER_TRUST_SERVER_CERT = os.environ.get('DB_TRUST_SERVER_CERT', 'Yes')
 
 app = Flask(__name__)
