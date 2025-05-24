@@ -426,7 +426,6 @@ def get_admin_metrics():
         cursor.execute("SELECT ISNULL(SUM(CAST(AmountPaid as decimal(18,2))), 0) as total_revenue FROM Transactions")
         total_revenue = float(cursor.fetchone().total_revenue)
 
-        # Lấy tăng trưởng user 6 tháng gần nhất
         cursor.execute("""
             SELECT 
                 FORMAT(CreatedAt, 'MMM') as month,
