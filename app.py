@@ -45,7 +45,6 @@ CORS(app, resources={
 genai.configure(api_key="AIzaSyDdIVT2V5A4L79oiyzsaRKPbsBJTEErlq4")
 model = genai.GenerativeModel('gemini-2.0-flash')
 
-# Temporary store for pending orders. In production, use a persistent store like Redis or a database.
 pending_orders = {}
 
 # SQL_SERVER_CONNECTION_STRING = f"Driver={{{SQL_SERVER_DRIVER}}};Server={SQL_SERVER_HOST};Database={SQL_SERVER_DATABASE};UID={SQL_SERVER_USER};PWD={SQL_SERVER_PASSWORD};TrustServerCertificate={SQL_SERVER_TRUST_SERVER_CERT};"
