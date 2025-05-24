@@ -57,6 +57,7 @@ SQL_SERVER_CONNECTION_STRING = (
     f"UID={SQL_SERVER_USER};"
     f"PWD={SQL_SERVER_PASSWORD};"
     f"TrustServerCertificate={SQL_SERVER_TRUST_SERVER_CERT};"
+    f"Encrypt=False;"
 )
 
 def get_db_connection():
