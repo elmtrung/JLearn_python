@@ -46,9 +46,9 @@ WORKDIR /app
 # Install runtime system dependencies
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-    unixodbc \ # ODBC manager
+    unixodbc \
     ffmpeg \
-    curl gnupg \ # For MS repo setup
+    curl gnupg \ 
     && rm -rf /var/lib/apt/lists/*
 
 # Add Microsoft's official repository for ODBC driver
