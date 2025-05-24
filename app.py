@@ -25,7 +25,7 @@ ZALOPAY_CONFIG = {
 
 
 SQL_SERVER_DRIVER = os.environ.get('DB_DRIVER', 'ODBC Driver 17 for SQL Server')
-SQL_SERVER_HOST = os.environ.get('DB_HOST', '34.44.254.240,1433')
+SQL_SERVER_HOST = os.environ.get('DB_HOST', '34.44.254.240:1433')
 SQL_SERVER_DATABASE = os.environ.get('DB_NAME', 'JLearnDb')
 SQL_SERVER_USER = os.environ.get('DB_USER', 'sa')
 SQL_SERVER_PASSWORD = os.environ.get('DB_PASSWORD', 'Quangvinh16#')
