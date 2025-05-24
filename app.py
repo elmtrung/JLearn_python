@@ -32,16 +32,16 @@ SQL_SERVER_PASSWORD = os.environ.get('DB_PASSWORD', '01234nung')
 SQL_SERVER_TRUST_SERVER_CERT = os.environ.get('DB_TRUST_SERVER_CERT', 'Yes')
 
 app = Flask(__name__)
-CORS(app)
+# CORS(app)
 
-# CORS(app, resources={
-#     r"/*": {
-#         "origins": ["http://localhost:3000"], ["https://japstudy.id.vn"],
-#         "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-#         "allow_headers": ["Content-Type", "Authorization"],
-#         "supports_credentials": True
-#     }
-# })
+CORS(app, resources={
+    r"/*": {
+        "origins": ["http://localhost:3000", "https://japstudy.id.vn"],
+        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        "allow_headers": ["Content-Type", "Authorization"],
+        "supports_credentials": True
+    }
+})
 
 genai.configure(api_key="AIzaSyDdIVT2V5A4L79oiyzsaRKPbsBJTEErlq4")
 model = genai.GenerativeModel('gemini-2.0-flash')
