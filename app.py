@@ -50,7 +50,14 @@ model = genai.GenerativeModel('gemini-2.0-flash')
 pending_orders = {}
 
 # SQL_SERVER_CONNECTION_STRING = f"Driver={{{SQL_SERVER_DRIVER}}};Server={SQL_SERVER_HOST};Database={SQL_SERVER_DATABASE};UID={SQL_SERVER_USER};PWD={SQL_SERVER_PASSWORD};TrustServerCertificate={SQL_SERVER_TRUST_SERVER_CERT};"
-SQL_SERVER_CONNECTION_STRING = "Driver={ODBC Driver 17 for SQL Server};Server=sqlserver;Database=JLearnDb;UID=sa;PWD=Quangvinh16#;TrustServerCertificate=Yes;"
+SQL_SERVER_CONNECTION_STRING = (
+    f"Driver={{{SQL_SERVER_DRIVER}}};"
+    f"Server={SQL_SERVER_HOST};"
+    f"Database={SQL_SERVER_DATABASE};"
+    f"UID={SQL_SERVER_USER};"
+    f"PWD={SQL_SERVER_PASSWORD};"
+    f"TrustServerCertificate={SQL_SERVER_TRUST_SERVER_CERT};"
+)
 
 def get_db_connection():
     """Establishes a connection to the SQL Server database using the provided connection string."""
